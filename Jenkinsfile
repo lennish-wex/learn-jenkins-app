@@ -47,7 +47,8 @@ pipeline {
                 sh '''
                     echo "E2E Test stage"
                     npm install serve
-                    node_modules/serve/build/main.js -s build
+                    node_modules/serve/build/main.js -s build &  # Start server in the background
+                    sleep 10  # Give the server some time to start
                     npm playwright test
                 '''
             }
