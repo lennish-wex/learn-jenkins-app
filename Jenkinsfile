@@ -69,7 +69,7 @@ pipeline {
             steps {
                 sh '''
                     npm install netlify-cli --save-dev
-                    node_modules/netlify-cli/build/run.js --version
+                    node_modules/netlify-cli/bin/run.js --version
                 '''
             }
         }
