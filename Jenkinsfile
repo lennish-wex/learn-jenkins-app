@@ -21,36 +21,42 @@ pipeline {
         //         '''
         //     }
         // }
-        stage('Test') {
-            agent {
-                docker {
-                    image 'node:current-alpine'
-                    reuseNode true
+
+        stage('Run Tests') {
+            parallel {
+                stage('Unit Tests') {
+                    agent {
+                        docker {
+                            image 'node:current-alpine'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            echo "Test stage"
+                            test -f build/index.html
+                            npm test
+                        '''
+                    }
                 }
-            }
-            steps {
-                sh '''
-                    echo "Test stage"
-                    test -f build/index.html
-                    npm test
-                '''
-            }
-        }
-         stage('E2E Test') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
-                    reuseNode true
+                stage('E2E Tests') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
+                            reuseNode true
+                        }
+                    }
+                    steps {
+                        sh '''
+                            echo "E2E Test stage"
+                            npm install serve
+                            node_modules/serve/build/main.js -s build &  # Start server in the background
+                            sleep 10  # Give the server some time to start
+                            npx playwright test --reporter=html
+                        '''
+                    }
                 }
-            }
-            steps {
-                sh '''
-                    echo "E2E Test stage"
-                    npm install serve
-                    node_modules/serve/build/main.js -s build &  # Start server in the background
-                    sleep 10  # Give the server some time to start
-                    npx playwright test --reporter=html
-                '''
+
             }
         }
    }
