@@ -7,25 +7,25 @@ pipeline {
     }
 
     stages {
-        // stage('Build') {
-        //     agent {
-        //         docker {
-        //             image 'node:current-alpine'
-        //             reuseNode true
-        //         }
-        //     }
-        //     steps {
-        //         sh '''
-        //             ls -la
-        //             node --version
-        //             npm --version
-        //             npm install
-        //             npm ci
-        //             npm run build
-        //             ls -la
-        //         '''
-        //     }
-        // }
+        stage('Build') {
+            agent {
+                docker {
+                    image 'node:current-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    ls -la
+                    node --version
+                    npm --version
+                    npm install
+                    npm ci
+                    npm run build
+                    ls -la
+                '''
+            }
+        }
 
         stage('Run Tests') {
             parallel {
@@ -43,25 +43,46 @@ pipeline {
                             npm test
                         '''
                     }
+                    post {
+                        always {
+                            junit 'jest-results/junit.xml'
+                        }
+                    }
                 }
-                stage('E2E Tests') {
+                stage('Prod E2E Tests') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
                             reuseNode true
                         }
                     }
+
+                    environment {
+                        CI_ENVIRONMENT_URL = 'https://soft-blancmange-cb773c.netlify.app'
+                    }
                     steps {
                         sh '''
                             echo "E2E Test stage"
-                            npm install serve
-                            node_modules/serve/build/main.js -s build &  # Start server in the background
-                            sleep 10  # Give the server some time to start
                             npx playwright test --reporter=html
                         '''
                     }
+                    post {
+                        always {
+                            publishHTML(
+                                [
+                                    allowMissing: false,
+                                    alwaysLinkToLastBuild: false,
+                                    keepAll: false,
+                                    reportDir: 'playwright-report',
+                                    reportFiles: 'index.html',
+                                    reportName: 'Playwright Local Report',
+                                    reportTitles: '',
+                                    useWrapperFileDirectly: true
+                                ]
+                            )
+                        }
+                    }
                 }
-
             }
         }
         stage('Deploy') {
@@ -93,7 +114,7 @@ pipeline {
                     keepAll: false,
                     reportDir: 'playwright-report',
                     reportFiles: 'index.html',
-                    reportName: 'Playwright HTML Report',
+                    reportName: 'Playwright E2e Report',
                     reportTitles: '',
                     useWrapperFileDirectly: true
                 ]
