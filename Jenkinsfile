@@ -113,13 +113,10 @@ pipeline {
                     def userInput = input(
                         id: 'userInput',
                         message: 'Do you wish to deploy to production?',
-                        ok: 'Yes, I am sure!'
+                        ok: 'Yes, I am sure!',
+                        time: 15,
+                        units: 'MINUTES'
                     )
-                    if (userInput.deployToProd) {
-                        currentBuild.result = 'SUCCESS'
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                    }
                 }
             }
         }
