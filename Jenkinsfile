@@ -106,6 +106,24 @@ pipeline {
             }
         }
 
+        stage('Approval') {
+            agent none
+            steps {
+                script {
+                    def userInput = input(
+                        id: 'userInput',
+                        message: 'Do you wish to deploy to production?',
+                        ok: 'Yes, I am sure!'
+                    )
+                    if (userInput.deployToProd) {
+                        currentBuild.result = 'SUCCESS'
+                    } else {
+                        currentBuild.result = 'ABORTED'
+                    }
+                }
+            }
+        }
+
         stage('Deploy Prod') {
             agent {
                 docker {
