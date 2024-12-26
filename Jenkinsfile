@@ -7,6 +7,7 @@ pipeline {
     }
 
     stages {
+
         stage('Build') {
             agent {
                 docker {
@@ -27,19 +28,19 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Tests') {
             parallel {
-                stage('Unit Tests') {
+                stage('Unit tests') {
                     agent {
                         docker {
                             image 'node:current-alpine'
                             reuseNode true
                         }
                     }
+
                     steps {
                         sh '''
-                            echo "Test stage"
-                            test -f build/index.html
+                            #test -f build/index.html
                             npm test
                         '''
                     }
@@ -49,7 +50,8 @@ pipeline {
                         }
                     }
                 }
-                stage('Prod E2E Tests') {
+
+                stage('E2E') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
@@ -57,15 +59,15 @@ pipeline {
                         }
                     }
 
-                    environment {
-                        CI_ENVIRONMENT_URL = 'https://soft-blancmange-cb773c.netlify.app'
-                    }
                     steps {
                         sh '''
-                            echo "E2E Test stage"
-                            npx playwright test --reporter=html
+                            npm install serve
+                            node_modules/serve/build/main.js -s build &
+                            sleep 10
+                            npx playwright test  --reporter=html
                         '''
                     }
+
                     post {
                         always {
                             publishHTML(
@@ -75,7 +77,7 @@ pipeline {
                                     keepAll: false,
                                     reportDir: 'playwright-report',
                                     reportFiles: 'index.html',
-                                    reportName: 'Playwright Local Report',
+                                    reportName: 'Playwright Local',
                                     reportTitles: '',
                                     useWrapperFileDirectly: true
                                 ]
@@ -85,6 +87,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy') {
             agent {
                 docker {
@@ -103,22 +106,40 @@ pipeline {
             }
         }
 
-   }
-    post {
-        always {
-            junit 'jest-results/junit.xml'
-            publishHTML(
-                [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: false,
-                    keepAll: false,
-                    reportDir: 'playwright-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Playwright E2e Report',
-                    reportTitles: '',
-                    useWrapperFileDirectly: true
-                ]
-            )
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'https://soft-blancmange-cb773c.netlify.app'
+            }
+
+            steps {
+                sh '''
+                    npx playwright test  --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML(
+                        [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: false,
+                            keepAll: false,
+                            reportDir: 'playwright-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Playwright E2E',
+                            reportTitles: '',
+                            useWrapperFileDirectly: true
+                        ]
+                    )
+                }
+            }
         }
     }
 }
