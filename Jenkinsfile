@@ -103,10 +103,10 @@ pipeline {
                     node_modules/netlify-cli/bin/run.js status
                     node_modules/netlify-cli/bin/run.js deploy --dir=build --json > deploy-output.json
                 '''
-            }
 
-            script {
-                env.STAGING_URL = sh(script: "node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                script {
+                    env.STAGING_URL = sh(script: "node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                }
             }
         }
 
@@ -145,8 +145,6 @@ pipeline {
                 }
             }
         }
-
-
 
         stage('Approval') {
             steps {
