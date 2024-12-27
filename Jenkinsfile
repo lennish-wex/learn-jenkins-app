@@ -102,10 +102,50 @@ pipeline {
                     echo "Deploying to Netlify site ID: $NETLIFY_SITE_ID"
                     node_modules/netlify-cli/bin/run.js status
                     node_modules/netlify-cli/bin/run.js deploy --dir=build --json > deploy-output.json
-                    node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json
                 '''
             }
+            script {
+                env.STAGING_URL = sh(script: "node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+            }
         }
+
+        stage('Staging E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.49.1-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = "{$env.STAGING_URL}"
+            }
+
+            steps {
+                sh '''
+                    npx playwright test  --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML(
+                        [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: false,
+                            keepAll: false,
+                            reportDir: 'playwright-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Staging E2E',
+                            reportTitles: '',
+                            useWrapperFileDirectly: true
+                        ]
+                    )
+                }
+            }
+        }
+
+
 
         stage('Approval') {
             steps {
@@ -161,7 +201,7 @@ pipeline {
                             keepAll: false,
                             reportDir: 'playwright-report',
                             reportFiles: 'index.html',
-                            reportName: 'Playwright E2E',
+                            reportName: 'Prod E2E',
                             reportTitles: '',
                             useWrapperFileDirectly: true
                         ]
