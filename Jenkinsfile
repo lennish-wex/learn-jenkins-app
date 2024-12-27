@@ -102,7 +102,7 @@ pipeline {
                     echo "Deploying to Netlify site ID: $NETLIFY_SITE_ID"
                     node_modules/netlify-cli/bin/run.js status
                     node_modules/netlify-cli/bin/run.js deploy --dir=build --json > deploy-output.json
-                    node_modules/node-jq/bin/jq -r '.deploy_id' deploy-output.json
+                    node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json
                 '''
             }
         }
