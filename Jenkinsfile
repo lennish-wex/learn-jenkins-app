@@ -107,16 +107,12 @@ pipeline {
         }
 
         stage('Approval') {
-            agent none
             steps {
-                script {
-                    def userInput = input(
-                        id: 'userInput',
-                        message: 'Do you wish to deploy to production?',
-                        ok: 'Yes, I am sure!',
-                        time: 15,
-                        units: 'MINUTES'
-                    )
+                steps {
+                    timeout(time: 15, unit: 'MINUTES'){
+                        input message:  'Do you wish to deploy to production?',
+                        ok: 'Yes, I am sure!'
+                    }
                 }
             }
         }
