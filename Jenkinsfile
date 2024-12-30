@@ -77,7 +77,7 @@ pipeline {
                                     keepAll: false,
                                     reportDir: 'playwright-report',
                                     reportFiles: 'index.html',
-                                    reportName: 'Playwright Local',
+                                    reportName: 'Local E2E',
                                     reportTitles: '',
                                     useWrapperFileDirectly: true
                                 ]
@@ -99,11 +99,11 @@ pipeline {
                 sh '''
                     npm install netlify-cli node-jq
                     node_modules/netlify-cli/bin/run.js --version
-                    echo "Deploying to Netlify site ID: $NETLIFY_SITE_ID"
+                    echo "Deploying to staging site ID: $NETLIFY_SITE_ID"
                     node_modules/netlify-cli/bin/run.js status
                     node_modules/netlify-cli/bin/run.js deploy --dir=build --json > deploy-output.json
-                    node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json
                 '''
+                # node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json
 
                 script {
                     env.STAGING_URL = sh(script: "node_modules/node-jq/bin/jq -r '.deploy_url' deploy-output.json", returnStdout: true)
@@ -124,7 +124,7 @@ pipeline {
             }
 
             environment {
-                CI_ENVIRONMENT_URL = "{$env.STAGING_URL}"
+                CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
             }
 
             steps {
